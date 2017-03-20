@@ -1131,30 +1131,30 @@ class MusicBot(discord.Client):
     async def cmd_search(self, player, channel, author, permissions, leftover_args):
         """
         Usage:
-            {command_prefix}search [service] [number] query
+            {command_prefix}search [service] [nombre] query
 
-        Searches a service for a video and adds it to the queue.
-        - service: any one of the following services:
-            - youtube (yt) (default if unspecified)
+        Recherche une vidéo sur un site et la rajoute à la queue.
+        - service: au choix parmis les sites suivants:
+            - youtube (yt) (par défaut)
             - soundcloud (sc)
             - yahoo (yh)
-        - number: return a number of video results and waits for user to choose one
-          - defaults to 1 if unspecified
-          - note: If your search query starts with a number,
-                  you must put your query in quotes
-            - ex: {command_prefix}search 2 "I ran seagulls"
+        - nombre: Retourne un nombre de vidéo et attends que l'utilisateur en choisisse une
+          - par défaut le nombre est a 1
+          - note: Si la recherche commence par un nombre,
+                  vous devez mettre votre recherche entre parentheses
+            - ex: {command_prefix}search 2 "the Coconut song"
         """
 
         if permissions.max_songs and player.playlist.count_for_user(author) > permissions.max_songs:
             raise exceptions.PermissionsError(
-                "You have reached your playlist item limit (%s)" % permissions.max_songs,
+                "Tu as atteints ta limite d'ajout à la playlist (%s)" % permissions.max_songs,
                 expire_in=30
             )
 
         def argcheck():
             if not leftover_args:
                 raise exceptions.CommandError(
-                    "Please specify a search query.\n%s" % dedent(
+                    "Précise un terme de recherche s'il te plait.\n%s" % dedent(
                         self.cmd_search.__doc__.format(command_prefix=self.config.command_prefix)),
                     expire_in=60
                 )
@@ -1164,7 +1164,7 @@ class MusicBot(discord.Client):
         try:
             leftover_args = shlex.split(' '.join(leftover_args))
         except ValueError:
-            raise exceptions.CommandError("Please quote your search query properly.", expire_in=30)
+            raise exceptions.CommandError("Formatte ta recherche correctement s'il te plait.", expire_in=30)
 
         service = 'youtube'
         items_requested = 3
@@ -1187,7 +1187,7 @@ class MusicBot(discord.Client):
             argcheck()
 
             if items_requested > max_items:
-                raise exceptions.CommandError("You cannot search for more than %s videos" % max_items)
+                raise exceptions.CommandError("Tu ne peux pas chercher plus de %s videos" % max_items)
 
         # Look jake, if you see this and go "what the fuck are you doing"
         # and have a better idea on how to do this, i'd be delighted to know.
@@ -1201,7 +1201,7 @@ class MusicBot(discord.Client):
 
         search_query = '%s%s:%s' % (services[service], items_requested, ' '.join(leftover_args))
 
-        search_msg = await self.send_message(channel, "Searching for videos...")
+        search_msg = await self.send_message(channel, "En recherche de vidéos...")
         await self.send_typing(channel)
 
         try:
@@ -1214,7 +1214,7 @@ class MusicBot(discord.Client):
             await self.safe_delete_message(search_msg)
 
         if not info:
-            return Response("No videos found.", delete_after=30)
+            return Response("Aucune vidéo trouvée.", delete_after=30)
 
         def check(m):
             return (
@@ -1227,13 +1227,13 @@ class MusicBot(discord.Client):
             result_message = await self.safe_send_message(channel, "Result %s/%s: %s" % (
                 info['entries'].index(e) + 1, len(info['entries']), e['webpage_url']))
 
-            confirm_message = await self.safe_send_message(channel, "Is this ok? Type `y`, `n` or `exit`")
+            confirm_message = await self.safe_send_message(channel, "Est-ce ok ? Tape `y`, `n` ou `exit`")
             response_message = await self.wait_for_message(30, author=author, channel=channel, check=check)
 
             if not response_message:
                 await self.safe_delete_message(result_message)
                 await self.safe_delete_message(confirm_message)
-                return Response("Ok nevermind.", delete_after=30)
+                return Response("Ok pas de soucis.", delete_after=30)
 
             # They started a new search query so lets clean up and bugger off
             elif response_message.content.startswith(self.config.command_prefix) or \
@@ -1250,20 +1250,20 @@ class MusicBot(discord.Client):
 
                 await self.cmd_play(player, channel, author, permissions, [], e['webpage_url'])
 
-                return Response("Alright, coming right up!", delete_after=30)
+                return Response("Ok ! Ca marche !", delete_after=30)
             else:
                 await self.safe_delete_message(result_message)
                 await self.safe_delete_message(confirm_message)
                 await self.safe_delete_message(response_message)
 
-        return Response("Oh well :frowning:", delete_after=30)
+        return Response("Ah :frowning:", delete_after=30)
 
     async def cmd_np(self, player, channel, server, message):
         """
         Usage:
             {command_prefix}np
 
-        Displays the current song in chat.
+        Affiche la musique en cours dans le chat.
         """
 
         if player.current_entry:
@@ -1276,16 +1276,16 @@ class MusicBot(discord.Client):
             prog_str = '`[%s/%s]`' % (song_progress, song_total)
 
             if player.current_entry.meta.get('channel', False) and player.current_entry.meta.get('author', False):
-                np_text = "Now Playing: **%s** added by **%s** %s\n" % (
+                np_text = "En cours: **%s** ajouté par **%s** %s\n" % (
                     player.current_entry.title, player.current_entry.meta['author'].name, prog_str)
             else:
-                np_text = "Now Playing: **%s** %s\n" % (player.current_entry.title, prog_str)
+                np_text = "En cours: **%s** %s\n" % (player.current_entry.title, prog_str)
 
             self.server_specific_data[server]['last_np_msg'] = await self.safe_send_message(channel, np_text)
             await self._manual_delete_check(message)
         else:
             return Response(
-                'There are no songs queued! Queue something with {}play.'.format(self.config.command_prefix),
+                'Aucune musique en cours. Ajoutes en une avec {}play.'.format(self.config.command_prefix),
                 delete_after=30
             )
 
@@ -1294,11 +1294,11 @@ class MusicBot(discord.Client):
         Usage:
             {command_prefix}summon
 
-        Call the bot to the summoner's voice channel.
+        Appelle le bot la ou tu te trouves.
         """
 
         if not author.voice_channel:
-            raise exceptions.CommandError('You are not in a voice channel!')
+            raise exceptions.CommandError('Tu ne te trouves pas dans un channel vocal !')
 
         voice_client = self.the_voice_clients.get(channel.server.id, None)
         if voice_client and voice_client.channel.server == author.voice_channel.server:
@@ -1309,16 +1309,16 @@ class MusicBot(discord.Client):
         chperms = author.voice_channel.permissions_for(author.voice_channel.server.me)
 
         if not chperms.connect:
-            self.safe_print("Cannot join channel \"%s\", no permission." % author.voice_channel.name)
+            self.safe_print("Impossible de rejoindre \"%s\", pas la permission." % author.voice_channel.name)
             return Response(
-                "```Cannot join channel \"%s\", no permission.```" % author.voice_channel.name,
+                "```Impossible de rejoindre \"%s\", pas la permission.```" % author.voice_channel.name,
                 delete_after=25
             )
 
         elif not chperms.speak:
-            self.safe_print("Will not join channel \"%s\", no permission to speak." % author.voice_channel.name)
+            self.safe_print("Impossible de rejoindre \"%s\", pas la permission de parler." % author.voice_channel.name)
             return Response(
-                "```Will not join channel \"%s\", no permission to speak.```" % author.voice_channel.name,
+                "```Impossible de rejoindre \"%s\", pas la permission de parler.```" % author.voice_channel.name,
                 delete_after=25
             )
 
@@ -1335,35 +1335,35 @@ class MusicBot(discord.Client):
         Usage:
             {command_prefix}pause
 
-        Pauses playback of the current song.
+        Met en pause la musique en cours.
         """
 
         if player.is_playing:
             player.pause()
 
         else:
-            raise exceptions.CommandError('Player is not playing.', expire_in=30)
+            raise exceptions.CommandError('Aucune musique en cours.', expire_in=30)
 
     async def cmd_resume(self, player):
         """
         Usage:
             {command_prefix}resume
 
-        Resumes playback of a paused song.
+        Relance la musique en pause.
         """
 
         if player.is_paused:
             player.resume()
 
         else:
-            raise exceptions.CommandError('Player is not paused.', expire_in=30)
+            raise exceptions.CommandError('Aucune musique en pause.', expire_in=30)
 
     async def cmd_shuffle(self, channel, player):
         """
         Usage:
             {command_prefix}shuffle
 
-        Shuffles the playlist.
+        Mélange la playlist.
         """
 
         player.playlist.shuffle()
@@ -1378,44 +1378,44 @@ class MusicBot(discord.Client):
             await asyncio.sleep(0.6)
 
         await self.safe_delete_message(hand, quiet=True)
-        return Response(":ok_hand:", delete_after=15)
+        return Response(":poop:", delete_after=15)
 
     async def cmd_clear(self, player, author):
         """
         Usage:
             {command_prefix}clear
 
-        Clears the playlist.
+        Vide la playlist.
         """
 
         player.playlist.clear()
-        return Response(':put_litter_in_its_place:', delete_after=20)
+        return Response(':put_litter_in_its_place: :poop: :put_litter_in_its_place:', delete_after=20)
 
     async def cmd_skip(self, player, channel, author, message, permissions, voice_channel):
         """
         Usage:
             {command_prefix}skip
 
-        Skips the current song when enough votes are cast, or by the bot owner.
+        Passe la musique si la majorité des personnes est d'accord.
         """
 
         if player.is_stopped:
-            raise exceptions.CommandError("Can't skip! The player is not playing!", expire_in=20)
+            raise exceptions.CommandError("Impossible de passer, aucune musique en cours !", expire_in=20)
 
         if not player.current_entry:
             if player.playlist.peek():
                 if player.playlist.peek()._is_downloading:
                     # print(player.playlist.peek()._waiting_futures[0].__dict__)
-                    return Response("The next song (%s) is downloading, please wait." % player.playlist.peek().title)
+                    return Response("La prochaine musique (%s) est en train d'être téléchargé. Un peu de patiente." % player.playlist.peek().title)
 
                 elif player.playlist.peek().is_downloaded:
-                    print("The next song will be played shortly.  Please wait.")
+                    print("La prochaine musique commence bientôt.")
                 else:
-                    print("Something odd is happening.  "
-                          "You might want to restart the bot if it doesn't start working.")
+                    print("Quelque chose d'étrange est arrivé.  "
+                          "Le bot devrait être redémarré si rien de fonctionne.")
             else:
-                print("Something strange is happening.  "
-                      "You might want to restart the bot if it doesn't start working.")
+                print("Quelque chose d'étrange est arrivé.  "
+                      "Le bot devrait être redémarré si rien de fonctionne.")
 
         if author.id == self.config.owner_id \
                 or permissions.instaskip \
@@ -1439,10 +1439,10 @@ class MusicBot(discord.Client):
         if skips_remaining <= 0:
             player.skip()  # check autopause stuff here
             return Response(
-                'your skip for **{}** was acknowledged.'
-                '\nThe vote to skip has been passed.{}'.format(
+                'Ta demande pour passer **{}** a été entendue.'
+                '\nLe vote de skip à été passé.{}'.format(
                     player.current_entry.title,
-                    ' Next song coming up!' if player.playlist.peek() else ''
+                    ' La prochaine musique arrive!' if player.playlist.peek() else ''
                 ),
                 reply=True,
                 delete_after=20
@@ -1451,11 +1451,11 @@ class MusicBot(discord.Client):
         else:
             # TODO: When a song gets skipped, delete the old x needed to skip messages
             return Response(
-                'your skip for **{}** was acknowledged.'
-                '\n**{}** more {} required to vote to skip this song.'.format(
+                'Ta demande pour passer **{}** à été entendue.'
+                '\n**{}** {} de plus est/sont requise pour passer.'.format(
                     player.current_entry.title,
                     skips_remaining,
-                    'person is' if skips_remaining == 1 else 'people are'
+                    'personne' if skips_remaining == 1 else 'personnes'
                 ),
                 reply=True,
                 delete_after=20
@@ -1466,12 +1466,11 @@ class MusicBot(discord.Client):
         Usage:
             {command_prefix}volume (+/-)[volume]
 
-        Sets the playback volume. Accepted values are from 1 to 100.
-        Putting + or - before the volume will make the volume change relative to the current volume.
+        Change le volume entre 1 et 100.
         """
 
         if not new_volume:
-            return Response('Current volume: `%s%%`' % int(player.volume * 100), reply=True, delete_after=20)
+            return Response('Volume: `%s%%`' % int(player.volume * 100), reply=True, delete_after=20)
 
         relative = False
         if new_volume[0] in '+-':
@@ -1481,7 +1480,7 @@ class MusicBot(discord.Client):
             new_volume = int(new_volume)
 
         except ValueError:
-            raise exceptions.CommandError('{} is not a valid number'.format(new_volume), expire_in=20)
+            raise exceptions.CommandError('{} est un nombre invalide'.format(new_volume), expire_in=20)
 
         if relative:
             vol_change = new_volume
@@ -1492,7 +1491,7 @@ class MusicBot(discord.Client):
         if 0 < new_volume <= 100:
             player.volume = new_volume / 100.0
 
-            return Response('updated volume from %d to %d' % (old_volume, new_volume), reply=True, delete_after=20)
+            return Response('Mise à jour du volume de %d à %d' % (old_volume, new_volume), reply=True, delete_after=20)
 
         else:
             if relative:
@@ -1508,7 +1507,7 @@ class MusicBot(discord.Client):
         Usage:
             {command_prefix}queue
 
-        Prints the current song queue.
+        Affiche les musiques suivantes.
         """
 
         lines = []
@@ -1717,7 +1716,7 @@ class MusicBot(discord.Client):
         Usage:
             {command_prefix}perms
 
-        Sends the user a list of their permissions.
+        Envoie a l'utilisateur une liste de ses permissions.
         """
 
         lines = ['Command permissions in %s\n' % server.name, '```', '```']
